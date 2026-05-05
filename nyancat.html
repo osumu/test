@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+	<meta charset="UTF-8">
+	<title>超難問クイズ</title>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css">
+	<style>
+		body {
+			background: #0f172a;
+			color: white;
+		}
+
+		.card {
+			background: #111827;
+			border: 1px solid #334155;
+			transition: background-color 0.25s ease;
+		}
+
+		.btn-choice {
+			width: 100%;
+			margin: 8px 0;
+			color: white;
+			border: 1px solid #475569;
+			background: #1e293b;
+			transition: transform .12s ease, background-color .12s ease;
+		}
+
+		.btn-choice:hover {
+			background: #334155;
+			color: white;
+		}
+
+		.correct-flash {
+			animation: flash-green .35s ease;
+		}
+
+		@keyframes flash-green {
+			0% {
+				background-color: #111827;
+			}
+
+			50% {
+				background-color: #14532d;
+			}
+
+			100% {
+				background-color: #111827;
+			}
+		}
+
+		.wrong-shake {
+			animation: shake .35s ease;
+		}
+
+		@keyframes shake {
+			0% {
+				transform:
+					translateX(0);
+			}
+
+			20% {
+				transform: translateX(-8px);
+			}
+
+			40% {
+				transform: translateX(8px);
+			}
+
+			60% {
+				transform:
+					translateX(-6px);
+			}
+
+			80% {
+				transform: translateX(6px);
+			}
+
+			100% {
+				transform: translateX(0);
+			}
+		}
+	</style>
+</head>
+
+<body class="d-flex justify-content-center align-items-center vh-100">
+
+	<div class="container" style="max-width:700px;">
+
+		<div class="text-center mb-3">
+			<h1 class="fw-bold">テスト</h1>
+		</div>
+
+		<div class="card p-4 shadow">
+
+			<h4 id="q" class="mb-4 text-center"></h4>
+
+			<div id="choices"></div>
+
+			<hr>
+
+			<div class="row text-center">
+				<div class="col">
+					<div class="badge bg-primary fs-6 p-2">Score <span id="score">0</span></div>
+				</div>
+				<div class="col">
+					<div class="badge bg-danger fs-6 p-2">♥ × <span id="lives">3</span></div>
+				</div>
+				<div class="col">
+					<div class="badge bg-warning text-dark fs-6 p-2">残り<span id="time">15</span>秒</div>
+				</div>
+			</div>
+
+		</div>
+	</div>
+
+	<script>
+		const quiz = [
+			{
+				q: "詩誌『亜』は誰が創刊に関わっている？",
+				choices: ["高村光太郎", "萩原朔太郎", "安西冬衛", "草野心平"],
+				a: "安西冬衛"
+			},
+			{
+				q: "84,126,210の最大公約数は何？",
+				choices: ["42", "21", "14", "71"],
+				a: "42"
+			},
+			{
+				q: "ブラックホールで光が脱出できなくなる境界を何という？",
+				choices: ["事象の地平面", "シュバルツシルト境界", "無限遠点", "重力境界"],
+				a: "事象の地平面"
+			},
+			{
+				q: "C言語で文字列の終端を示す特殊文字は何？",
+				choices: ["\\0", "\\n", "\\t", "EOF"],
+				a: "\\0"
+			},
+			{
+				q: "人の体細胞に含まれる染色体は全部で何本？",
+				choices: ["46本", "44本", "48本", "23本"],
+				a: "46本"
+			},
+			{
+				q: "将棋で角と飛車の両方の動きを持つ成り駒は何？",
+				choices: ["竜王", "竜馬", "金将", "成香"],
+				a: "竜王"
+			},
+			{
+				q: "ラテン語 Alea iacta est. を日本語に訳すと何？",
+				choices: ["賽は投げられた", "運命は我にあり", "人事を尽くして天命を待つ", "決断の時"],
+				a: "賽は投げられた"
+			},
+			{
+				q: "Unicode の U+1234 は何？",
+				choices: ["香（漢字）", "ģ（ラトビア語アルファベット）", "ᄑ（ハングル）", "ሴ（アムハラ文字）"],
+				a: "ሴ（アムハラ文字）"
+			},
+			{
+				q: "『こころ』で先生の遺書の契機となった出来事は何？",
+				choices: ["Kの自殺", "明治天皇の崩御", "友人の裏切り", "家族の病"],
+				a: "Kの自殺"
+			},
+			{
+				q: "HTML は何の略？",
+				choices: ["HyperText Markup Language", "HighText Machine Language", "Hyper Transfer Markup Language", "Hyper Tool Language"],
+				a: "HyperText Markup Language"
+			},
+			{
+				q: "Medical Device Related Pressure Ulcer の日本語は？",
+				choices: ["医療機器関連圧迫創傷", "医療圧迫性潰瘍", "機器性皮膚炎", "接触性褥瘡"],
+				a: "医療機器関連圧迫創傷"
+			},
+			{
+				q: "1000未満で 9 と 14 の両方の倍数の最大値は？",
+				choices: ["882", "756", "945", "630"],
+				a: "882"
+			},
+			{
+				q: "遠近法で平行線が収束する点は？",
+				choices: ["消失点", "焦点", "視点", "収束点"],
+				a: "消失点"
+			},
+			{
+				q: "Animation vs. Math の作者は誰？",
+				choices: ["アラン・ベッカー", "マーク・ロバー", "ドミニク・ウォール", "ジェームズ・リー"],
+				a: "アラン・ベッカー"
+			},
+			{
+				q: "再帰呼び出しの戻り先情報を保持する領域は？",
+				choices: ["スタック", "ヒープ", "キャッシュ", "レジスタ"],
+				a: "スタック"
+			},
+			{
+				q: "「鬱」の部首は何？",
+				choices: ["心", "木", "艹", "鬯"],
+				a: "心"
+			},
+			{
+				q: "x+y=13, xy=40 のとき x²+y² は？",
+				choices: ["89", "169", "73", "49"],
+				a: "89"
+			},
+			{
+				q: "マグナ・カルタを認めたイングランド王は？",
+				choices: ["ジョン王", "リチャード1世", "ヘンリー2世", "エドワード1世"],
+				a: "ジョン王"
+			},
+			{
+				q: "2進法101101は10進法で？",
+				choices: ["45", "37", "53", "29"],
+				a: "45"
+			},
+			{
+				q: "ATPを最も多く産生する細胞小器官は？",
+				choices: ["ミトコンドリア", "ゴルジ体", "核", "リボソーム"],
+				a: "ミトコンドリア"
+			},
+			{
+				q: "FRは何の略？",
+				choices: ["Frame Rate", "Free Response", "Fast Render", "Full Resolution"],
+				a: "Frame Rate"
+			},
+			{
+				q: "1³+2³+…+12³ の値は？",
+				choices: ["6084", "5184", "4096", "7200"],
+				a: "6084"
+			},
+			{
+				q: "Zeitgeist の日本語訳は？",
+				choices: ["時代精神", "時代錯誤", "精神世界", "時間感覚"],
+				a: "時代精神"
+			},
+			{
+				q: "最大部分和問題のO(n)解法は？",
+				choices: ["カデーン法", "ダイクストラ法", "ベルマン法", "プリム法"],
+				a: "カデーン法"
+			},
+			{
+				q: "将棋盤のマス数は？",
+				choices: ["81", "64", "100", "49"],
+				a: "81"
+			},
+			{
+				q: "πが無理数であることを最初に証明したのは？",
+				choices: ["ランベルト", "オイラー", "ガウス", "リーマン"],
+				a: "ランベルト"
+			},
+			{
+				q: "山月記で李徴が虎になった原因は？",
+				choices: ["自尊心と羞恥心", "怠惰", "病気", "戦争"],
+				a: "自尊心と羞恥心"
+			},
+			{
+				q: "7²−5²は？",
+				choices: ["24", "12", "18", "2"],
+				a: "24"
+			},
+			{
+				q: "PNGの正式名称は？",
+				choices: ["Portable Network Graphics", "Public Net Graphics", "Portable New Graphic", "Picture Network Group"],
+				a: "Portable Network Graphics"
+			},
+			{
+				q: "ABO血液型抗原の位置は？",
+				choices: ["細胞膜表面", "核内", "細胞質", "ミトコンドリア"],
+				a: "細胞膜表面"
+			}
+		];
+
+		function shuffle(arr) {
+			for (let i = arr.length - 1; i > 0; i--) {
+				let r = Math.floor(Math.random() * (i + 1));
+				[arr[i], arr[r]] = [arr[r], arr[i]];
+			}
+		}
+
+		shuffle(quiz);
+		shuffle(quiz);
+		const activeQuiz = quiz.slice(0, 20);
+
+		let i = 0;
+		let score = 0;
+		let lives = 3;
+		let time = 15;
+		let timer;
+
+		const q = document.getElementById("q");
+		const choices = document.getElementById("choices");
+		const scoreEl = document.getElementById("score");
+		const livesEl = document.getElementById("lives");
+		const timeEl = document.getElementById("time");
+
+		function load() {
+			if (lives <= 0) {
+				q.innerHTML = "GAME OVER";
+				choices.innerHTML = "";
+				clearInterval(timer);
+				return;
+			}
+
+			if (i >= activeQuiz.length) {
+				q.innerHTML = "CLEAR! Score: " + score;
+				choices.innerHTML = "";
+				clearInterval(timer);
+				return;
+			}
+
+			time = 15;
+			update();
+
+			let data = activeQuiz[i];
+			q.innerText = data.q;
+
+			choices.innerHTML = "";
+
+			shuffle(data.choices);
+
+			data.choices.forEach(c => {
+				let btn = document.createElement("button");
+				btn.className = "btn btn-outline-light btn-choice";
+				btn.innerText = c;
+				btn.onclick = () => check(c);
+				choices.appendChild(btn);
+			});
+
+			startTimer();
+		}
+
+		function check(ans) {
+			const correct = activeQuiz[i].a;
+
+			Array.from(choices.children).forEach(btn => {
+				btn.disabled = true;
+			});
+
+			if (ans === correct) {
+				score++;
+				card.classList.add("correct-flash");
+
+				setTimeout(() => {
+					card.classList.remove("correct-flash");
+					i++;
+					load();
+				}, 350);
+
+			} else {
+				lives--;
+				card.classList.add("wrong-shake");
+
+				setTimeout(() => {
+					card.classList.remove("wrong-shake");
+					i++;
+					load();
+				}, 350);
+			}
+		}
+
+		function startTimer() {
+			clearInterval(timer);
+			timer = setInterval(() => {
+				time--;
+				update();
+
+				if (time <= 0) {
+					lives--;
+					i++;
+					load();
+				}
+			}, 1000);
+		}
+
+		function update() {
+			scoreEl.innerText = score;
+			livesEl.innerText = lives;
+			timeEl.innerText = time;
+		}
+
+		// start
+		load();
+	</script>
+
+</body>
+
+</html>
