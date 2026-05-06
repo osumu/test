@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+	<meta charset="UTF-8">
+	<title>超難問テスト</title>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css">
+
+	<style>
+		body {
+			background: #f5f5f5;
+		}
+
+		.container {
+			max-width: 900px;
+		}
+
+		.test-header {
+			background: white;
+			padding: 20px;
+			border-radius: 8px;
+			border: 1px solid #ccc;
+			margin-bottom: 20px;
+		}
+
+		.question-block {
+			background: white;
+			padding: 20px;
+			border-radius: 8px;
+			border: 1px solid #ccc;
+			margin-bottom: 20px;
+		}
+
+		/* 採点アニメーション */
+		.correct-anim {
+			animation: correctFlash 0.8s ease;
+			border-radius: 6px;
+		}
+
+		@keyframes correctFlash {
+			0% {
+				background-color: #ffffff;
+			}
+
+			50% {
+				background-color: #c8f7c5;
+			}
+
+			100% {
+				background-color: #ffffff;
+			}
+		}
+
+		.wrong-anim {
+			animation: wrongFlash 0.8s ease;
+			border-radius: 6px;
+		}
+
+		@keyframes wrongFlash {
+			0% {
+				background-color: #ffffff;
+			}
+
+			50% {
+				background-color: #f7c5c5;
+			}
+
+			100% {
+				background-color: #ffffff;
+			}
+		}
+
+		#resultBox {
+			display: none;
+			background: #fff;
+			padding: 30px;
+			border-radius: 10px;
+			border: 2px solid #4caf50;
+			text-align: center;
+			font-size: 2rem;
+			font-weight: bold;
+			animation: pop 0.6s ease;
+		}
+
+		@keyframes pop {
+			0% {
+				transform: scale(0.5);
+				opacity: 0;
+			}
+
+			70% {
+				transform: scale(1.1);
+				opacity: 1;
+			}
+
+			100% {
+				transform: scale(1);
+			}
+		}
+
+		.timer {
+			font-size: 1.3rem;
+			font-weight: bold;
+			color: #d32f2f;
+		}
+	</style>
+</head>
+
+<body>
+
+	<div class="container mt-4">
+
+		<div class="test-header">
+			<h2 class="text-center fw-bold">超難問テスト</h2>
+
+			<div class="text-center mt-3">
+				<label class="me-2">テスト時間：</label>
+				<select id="timeSelect" class="form-select d-inline-block" style="width:150px;">
+					<option value="1200">20分</option>
+					<option value="600">10分</option>
+				</select>
+				<button class="btn btn-primary ms-3" onclick="startTest()">開始</button>
+			</div>
+
+			<div class="text-center mt-3 timer" id="timer">残り時間：--:--</div>
+		</div>
+
+		<form id="testForm"></form>
+
+		<div class="text-center">
+			<button id="submitBtn" class="btn btn-success btn-lg" onclick="gradeTest()" disabled>採点する</button>
+		</div>
+
+		<div id="resultBox" class="mt-4"></div>
+
+	</div>
+
+	<script>
+		const quiz = [
+			{ q: "詩誌『亜』は誰が創刊に関わっている？", choices: ["高村光太郎", "萩原朔太郎", "安西冬衛", "草野心平"], a: "安西冬衛" },
+			{ q: "84,126,210の最大公約数は何？", choices: ["42", "21", "14", "71"], a: "42" },
+			{ q: "ブラックホールで光が脱出できなくなる境界を何という？", choices: ["事象の地平面", "シュバルツシルト境界", "無限遠点", "重力境界"], a: "事象の地平面" },
+			{ q: "C言語で文字列の終端を示す特殊文字は何？", choices: ["\\0", "\\n", "\\t", "EOF"], a: "\\0" },
+			{ q: "人の体細胞に含まれる染色体は全部で何本？", choices: ["46本", "44本", "48本", "23本"], a: "46本" },
+			{ q: "将棋で角と飛車の両方の動きを持つ成り駒は何？", choices: ["竜王", "竜馬", "金将", "成香"], a: "竜王" },
+			{ q: "ラテン語 Alea iacta est. を日本語に訳すと何？", choices: ["賽は投げられた", "運命は我にあり", "人事を尽くして天命を待つ", "決断の時"], a: "賽は投げられた" },
+			{ q: "Unicode の U+1234 は何？", choices: ["香（漢字）", "ģ（ラトビア語アルファベット）", "ᄑ（ハングル）", "ሴ（アムハラ文字）"], a: "ሴ（アムハラ文字）" },
+			{ q: "『こころ』で先生の遺書の契機となった出来事は何？", choices: ["Kの自殺", "明治天皇の崩御", "友人の裏切り", "家族の病"], a: "Kの自殺" },
+			{ q: "HTML は何の略？", choices: ["HyperText Markup Language", "HighText Machine Language", "Hyper Transfer Markup Language", "Hyper Tool Language"], a: "HyperText Markup Language" },
+			{ q: "Medical Device Related Pressure Ulcer の日本語は？", choices: ["医療機器関連圧迫創傷", "医療圧迫性潰瘍", "機器性皮膚炎", "接触性褥瘡"], a: "医療機器関連圧迫創傷" },
+			{ q: "1000未満で 9 と 14 の両方の倍数の最大値は？", choices: ["882", "756", "945", "630"], a: "882" },
+			{ q: "遠近法で平行線が収束する点は？", choices: ["消失点", "焦点", "視点", "収束点"], a: "消失点" },
+			{ q: "Animation vs. Math の作者は誰？", choices: ["アラン・ベッカー", "マーク・ロバー", "ドミニク・ウォール", "ジェームズ・リー"], a: "アラン・ベッカー" },
+			{ q: "再帰呼び出しの戻り先情報を保持する領域は？", choices: ["スタック", "ヒープ", "キャッシュ", "レジスタ"], a: "スタック" },
+			{ q: "「鬱」の部首は何？", choices: ["心", "木", "艹", "鬯"], a: "心" },
+			{ q: "x+y=13, xy=40 のとき x²+y² は？", choices: ["89", "169", "73", "49"], a: "89" },
+			{ q: "マグナ・カルタを認めたイングランド王は？", choices: ["ジョン王", "リチャード1世", "ヘンリー2世", "エドワード1世"], a: "ジョン王" },
+			{ q: "2進法101101は10進法で？", choices: ["45", "37", "53", "29"], a: "45" },
+			{ q: "ATPを最も多く産生する細胞小器官は？", choices: ["ミトコンドリア", "ゴルジ体", "核", "リボソーム"], a: "ミトコンドリア" }
+		];
+
+		let timer = null;
+		let remaining = 0;
+
+		function startTest() {
+			document.getElementById("submitBtn").disabled = false;
+
+			remaining = parseInt(document.getElementById("timeSelect").value);
+			updateTimer();
+
+			if (timer) clearInterval(timer);
+			timer = setInterval(() => {
+				remaining--;
+				updateTimer();
+				if (remaining <= 0) {
+					clearInterval(timer);
+					gradeTest();
+				}
+			}, 1000);
+
+			renderQuestions();
+		}
+
+		function updateTimer() {
+			let m = Math.floor(remaining / 60);
+			let s = remaining % 60;
+			document.getElementById("timer").innerText = `残り時間：${m}:${s.toString().padStart(2, '0')}`;
+		}
+
+		function renderQuestions() {
+			const form = document.getElementById("testForm");
+			form.innerHTML = "";
+
+			quiz.forEach((q, idx) => {
+				let block = document.createElement("div");
+				block.className = "question-block";
+
+				let html = `<h5>${idx + 1}. ${q.q}</h5>`;
+
+				q.choices.forEach(choice => {
+					html += `
+                        <div class="form-check" id="q${idx}_${choice}">
+                            <input class="form-check-input" type="radio" name="q${idx}" value="${choice}">
+                            <label class="form-check-label">${choice}</label>
+                        </div>
+                    `;
+				});
+
+				block.innerHTML = html;
+				form.appendChild(block);
+			});
+		}
+
+		function gradeTest() {
+			clearInterval(timer);
+
+			let score = 0;
+
+			quiz.forEach((q, idx) => {
+				let selected = document.querySelector(`input[name="q${idx}"]:checked`);
+				let correct = q.a;
+
+				q.choices.forEach(choice => {
+					let div = document.getElementById(`q${idx}_${choice}`);
+
+					if (choice === correct) {
+						div.classList.add("correct-anim");
+					}
+
+					if (selected && selected.value === choice) {
+						if (choice === correct) {
+							score++;
+						} else {
+							div.classList.add("wrong-anim");
+						}
+					}
+				});
+			});
+
+			let resultBox = document.getElementById("resultBox");
+			resultBox.style.display = "block";
+			resultBox.innerHTML = `あなたの得点：${score} / ${quiz.length}`;
+		}
+	</script>
+
+</body>
+
+</html>
